@@ -6,11 +6,11 @@ Also, a Powershell module which acts as a very basic cli StarDict dictionary loo
 # Using Powershell Module
 
 - Add full path of *.ifo files of dictionaries to global variables:
-```
+```powershell
 $Global:Dict1 = Set-Dict "full/path/to/somedict.ifo"
 ```
 - Optionally, add them to arrays in order to create dictionary groups:
-```
+```powershell
 $Global:English = @($Dict1, $Dict2, $Dict3, $Dict4)
 $Global:French = @($Dict5, $Dict6, $Dict7)
 ```
@@ -20,22 +20,22 @@ $Global:French = @($Dict5, $Dict6, $Dict7)
 - Put StarDict.psm1 and StarDictNet.dll right next to your Microsoft.PowerShell_profile.ps1
 
 - Add these 2 lines to your Microsoft.PowerShell_profile.ps1:
-```
+```powershell
 Import-Module $PSScriptRoot\StarDict.psm1
 Set-DictSession
 ```
 
 * Lookup words:
     - Lookup at a single dictionary:
-    ```
-    $Dict1 | Get-Def Beleaguered -IgnoreCase // will match beleaguered also
-    $Dict1 | Get-DefRegex "^beleag*" // get words that starts with beleag
-    $FrenchDict1 | Get-Def "eutes" -IgnoreDiacritics  // instead of eûtes
+    ```powershell
+    $Dict1 | Get-Def Beleaguered -IgnoreCase <# will match beleaguered also #>
+    $Dict1 | Get-DefRegex "^beleag*" <# get words that starts with beleag #>
+    $FrenchDict1 | Get-Def "eutes" -IgnoreDiacritics  <# instead of eûtes #>
     ```
     - Lookup at multiple dictionaries:
-    ````
+    ````powershell
     $English | Get-BatchDef "daredevil"
-    $Turkce | Get-BatchDefRegex "^\b(\w+)\s\1$" // search reduplicative words with regex
+    $Turkce | Get-BatchDefRegex "^\b(\w+)\s\1$" <# search reduplicative words with regex #>
     ````
 # Screenshots
 ![Ignore diacritics](/img/ignore_diacritics.png)
