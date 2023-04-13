@@ -8,7 +8,6 @@ Also, a Powershell module which acts as a very basic cli StarDict dictionary loo
 - Add full path of *.ifo files of dictionaries to global variables:
 ```
 $Global:Dict1 = Set-Dict "full/path/to/somedict.ifo"
-
 ```
 - Optionally, add them to arrays in order to create dictionary groups:
 ```
@@ -49,4 +48,4 @@ Set-DictSession
 *Query with regex expressions*
 
 # Note
-Windows elinks builds are provided as-is, use at your own risk.
+Windows elinks build is provided as-is, use at your own risk.
