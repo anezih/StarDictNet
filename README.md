@@ -44,8 +44,8 @@ Set-DictSession
 ![Batch lookup](/img/daredevil.png)
 *Batch lookup*
 
-![Query with regex expressions](/img/regex.png)
-*Query with regex expressions*
+![Query with regular expressions](/img/regex.png)
+*Query with regular expressions*
 
 # Note
 Windows elinks build is provided as-is, use at your own risk.
