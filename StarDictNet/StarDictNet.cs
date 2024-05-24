@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Buffers.Binary;
+using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -116,7 +117,7 @@ namespace StarDictNet
             {
                 return DictZip.readAt(offset, size);
             }
-                
+
             else
             {
                 DictStream.Seek(offset, SeekOrigin.Begin);
@@ -329,6 +330,70 @@ namespace StarDictNet
 
             writer.Dispose();
             createStream.Dispose();
+        }
+
+        public static List<OutputEntry> PrepareOutput(List<OutputEntry> entries)
+        {
+            var sortedEntries = entries.OrderBy(x => x.Headword, StringComparer.OrdinalIgnoreCase);
+            int idx = 0;
+            int offset = 0;
+            foreach (var entry in entries)
+            {
+                entry.defOffset = offset;
+                entry.idx = idx;
+
+                idx += 1;
+                offset += entry.DefinitionSize();
+            }
+            return sortedEntries.ToList();
+        }
+
+        public static byte[] ToUint32BigEndian(int number)
+        {
+            Span<byte> dest = new();
+            BinaryPrimitives.WriteUInt32BigEndian(dest, (uint)number);
+            return dest.ToArray();
+        }
+
+        // https://github.com/huzheng001/stardict-3/blob/master/dict/doc/StarDictFileFormat
+        public static Stream Write(List<OutputEntry> entries, string fileName = "Stardict_Dictionary",
+        string title = "Title", string author = "Author", string description = "Desc.")
+        {
+            string ifoName = $"{fileName}.ifo";
+            string idxName = $"{fileName}.idx";
+            string dictName = $"{fileName}.dict";
+            string synName = $"{fileName}.syn";
+
+            MemoryStream ifoStream = new();
+            MemoryStream idxStream = new();
+            MemoryStream dictStream = new();
+            MemoryStream synStream = new();
+
+            var prepedEntries = PrepareOutput(entries);
+            int idxSize = 0;
+            int totalSynsWritten = 0;
+            foreach (var entry in prepedEntries)
+            {
+                // idx
+                idxStream.Write(entry.HeadwordUTF8());
+                idxStream.WriteByte(0x00);
+                idxStream.Write(ToUint32BigEndian(entry.defOffset));
+                idxStream.Write(ToUint32BigEndian(entry.DefinitionSize()));
+                idxSize += entry.HeadwordUTF8().Length + 1 + 4 + 4;
+                // dict
+                dictStream.Write(entry.DefinitionUTF8());
+                // syns
+                if (entry.Alternatives != null && entry.Alternatives.Count > 0)
+                {
+                    foreach (var syn in entry.Alternatives)
+                    {
+                        synStream.Write(Encoding.UTF8.GetBytes(syn));
+                        synStream.WriteByte(0x00);
+                        synStream.Write(ToUint32BigEndian(entry.idx));
+                        totalSynsWritten += 1;
+                    }
+                }
+            }
         }
     }
 }
