@@ -332,19 +332,50 @@ namespace StarDictNet
             writer.Dispose();
             createStream.Dispose();
         }
+        // Half-assed but at least it produces the correct results.
+        private static int StarDictComp(string s1, string s2, UTF8Encoding utf8)
+        {
+            List<byte> s1Bytes = new();
+            List<byte> s2Bytes = new();
 
-        public static List<OutputEntry> PrepareOutput(List<OutputEntry> entries)
+            foreach (var c in s1)
+            {
+                if (char.IsAscii(c))
+                    if (char.IsUpper(c))
+                        s1Bytes.Add((byte)(c + 32));
+                    else
+                        s1Bytes.Add((byte)c);
+                else
+                   s1Bytes.AddRange(utf8.GetBytes(c.ToString()));
+            }
+            foreach (var c in s2)
+            {
+                if (char.IsAscii(c))
+                    if (char.IsUpper(c))
+                        s2Bytes.Add((byte)(c + 32));
+                    else
+                        s2Bytes.Add((byte)c);
+                else
+                   s2Bytes.AddRange(utf8.GetBytes(c.ToString()));
+            }
+            var min = Math.Min(s1Bytes.Count, s2Bytes.Count);
+            for (int i = 0; i < min; i++)
+            {
+                var c1 = s1Bytes[i];
+                var c2 = s2Bytes[i];
+                if (c1 != c2)
+                    return c1 - c2;
+            }
+            if (s1.Length != s2.Length)
+                return s1.Length - s2.Length;
+            else
+                return string.Compare(s1, s2, StringComparison.Ordinal);
+        }
+
+        private static List<OutputEntry> PrepareOutput(List<OutputEntry> entries)
         {
             var utf8NoBom = new UTF8Encoding(false);
-            // FIXME
-            entries.Sort((a,b) =>
-            {
-                var compare = string.Compare(a.Headword, b.Headword, StringComparison.OrdinalIgnoreCase);
-                if (compare != 0)
-                    return compare;
-                compare = string.Compare(a.Headword, b.Headword, StringComparison.Ordinal);
-                return compare;
-            });
+            entries.Sort((a,b) => { return StarDictComp(a.Headword, b.Headword, utf8NoBom);});
             int idx = 0;
             int offset = 0;
             foreach (var entry in entries)
@@ -358,7 +389,7 @@ namespace StarDictNet
             return entries;
         }
 
-        public static byte[] ToUint32BigEndian(int number)
+        private static byte[] ToUint32BigEndian(int number)
         {
             byte[] buf = new byte[4];
             Span<byte> dest = new(buf);
@@ -368,7 +399,7 @@ namespace StarDictNet
 
         private static void AddBinToZip(string fileName, MemoryStream inMs, ZipArchive zipArchive)
         {
-            var entry = zipArchive. CreateEntry(fileName);
+            var entry = zipArchive.CreateEntry(fileName);
             using (var zipEntryStream = entry.Open())
             {
                 inMs.Seek(0, SeekOrigin.Begin);
