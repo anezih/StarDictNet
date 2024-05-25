@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Globalization;
+using System.IO.Compression;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -313,7 +314,7 @@ namespace StarDictNet
                 writer.WriteStringValue(it.Word);
                 writer.WritePropertyName(nameof(it.Alternatives));
                 writer.WriteStartArray();
-                if (it.Alternatives != null && it.Alternatives.Any())
+                if (it.Alternatives != null && it.Alternatives.Count > 0)
                 {
                     foreach (var a in it.Alternatives)
                     {
@@ -334,7 +335,16 @@ namespace StarDictNet
 
         public static List<OutputEntry> PrepareOutput(List<OutputEntry> entries)
         {
-            var sortedEntries = entries.OrderBy(x => x.Headword, StringComparer.OrdinalIgnoreCase);
+            var utf8NoBom = new UTF8Encoding(false);
+            // FIXME
+            entries.Sort((a,b) =>
+            {
+                var compare = string.Compare(a.Headword, b.Headword, StringComparison.OrdinalIgnoreCase);
+                if (compare != 0)
+                    return compare;
+                compare = string.Compare(a.Headword, b.Headword, StringComparison.Ordinal);
+                return compare;
+            });
             int idx = 0;
             int offset = 0;
             foreach (var entry in entries)
@@ -345,18 +355,35 @@ namespace StarDictNet
                 idx += 1;
                 offset += entry.DefinitionSize();
             }
-            return sortedEntries.ToList();
+            return entries;
         }
 
         public static byte[] ToUint32BigEndian(int number)
         {
-            Span<byte> dest = new();
+            byte[] buf = new byte[4];
+            Span<byte> dest = new(buf);
             BinaryPrimitives.WriteUInt32BigEndian(dest, (uint)number);
             return dest.ToArray();
         }
 
+        private static void AddBinToZip(string fileName, MemoryStream inMs, ZipArchive zipArchive)
+        {
+            var entry = zipArchive. CreateEntry(fileName);
+            using (var zipEntryStream = entry.Open())
+            {
+                inMs.Seek(0, SeekOrigin.Begin);
+                inMs.CopyTo(zipEntryStream);
+            }
+        }
+
+        private static void CloseDispose(MemoryStream ms)
+        {
+            ms.Close();
+            ms.Dispose();
+        }
+
         // https://github.com/huzheng001/stardict-3/blob/master/dict/doc/StarDictFileFormat
-        public static Stream Write(List<OutputEntry> entries, string fileName = "Stardict_Dictionary",
+        public static MemoryStream Write(List<OutputEntry> entries, string fileName = "Stardict_Dictionary",
         string title = "Title", string author = "Author", string description = "Desc.")
         {
             string ifoName = $"{fileName}.ifo";
@@ -368,6 +395,8 @@ namespace StarDictNet
             MemoryStream idxStream = new();
             MemoryStream dictStream = new();
             MemoryStream synStream = new();
+
+            var utf8NoBom = new UTF8Encoding(false);
 
             var prepedEntries = PrepareOutput(entries);
             int idxSize = 0;
@@ -387,13 +416,42 @@ namespace StarDictNet
                 {
                     foreach (var syn in entry.Alternatives)
                     {
-                        synStream.Write(Encoding.UTF8.GetBytes(syn));
+                        synStream.Write(utf8NoBom.GetBytes(syn));
                         synStream.WriteByte(0x00);
                         synStream.Write(ToUint32BigEndian(entry.idx));
                         totalSynsWritten += 1;
                     }
                 }
             }
+            // ifo
+            ifoStream.Write(utf8NoBom.GetBytes("StarDict's dict ifo file\n"));
+            ifoStream.Write(utf8NoBom.GetBytes("version=3.0.0\n"));
+            ifoStream.Write(utf8NoBom.GetBytes($"bookname={title}\n"));
+            ifoStream.Write(utf8NoBom.GetBytes($"wordcount={prepedEntries.Count}\n"));
+            if (totalSynsWritten > 0)
+                ifoStream.Write(utf8NoBom.GetBytes($"synwordcount={totalSynsWritten}\n"));
+            ifoStream.Write(utf8NoBom.GetBytes($"idxfilesize={idxSize}\n"));
+            ifoStream.Write(utf8NoBom.GetBytes($"author={author}\n"));
+            ifoStream.Write(utf8NoBom.GetBytes($"description={description}\n"));
+            ifoStream.Write(utf8NoBom.GetBytes($"sametypesequence=h\n"));
+
+            // zipfile
+            MemoryStream zipMs = new MemoryStream();
+            using (var zipArchiveStream = new ZipArchive(zipMs, ZipArchiveMode.Create, true))
+            {
+                AddBinToZip(idxName, idxStream, zipArchiveStream);
+                AddBinToZip(dictName, dictStream, zipArchiveStream);
+                if (totalSynsWritten > 0)
+                    AddBinToZip(synName, synStream, zipArchiveStream);
+                AddBinToZip(ifoName, ifoStream, zipArchiveStream);
+            }
+
+            CloseDispose(ifoStream);
+            CloseDispose(idxStream);
+            CloseDispose(dictStream);
+            CloseDispose(synStream);
+
+            return zipMs;
         }
     }
 }

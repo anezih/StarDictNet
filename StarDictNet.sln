@@ -5,6 +5,8 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StarDictNet", "StarDictNet\StarDictNet.csproj", "{CC1493B6-44D0-4F13-AB89-D9FCDCA2C64F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{C652B6DA-297C-418A-B5CA-2E4B4198AEE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{CC1493B6-44D0-4F13-AB89-D9FCDCA2C64F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC1493B6-44D0-4F13-AB89-D9FCDCA2C64F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC1493B6-44D0-4F13-AB89-D9FCDCA2C64F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C652B6DA-297C-418A-B5CA-2E4B4198AEE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C652B6DA-297C-418A-B5CA-2E4B4198AEE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C652B6DA-297C-418A-B5CA-2E4B4198AEE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C652B6DA-297C-418A-B5CA-2E4B4198AEE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
