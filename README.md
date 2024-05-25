@@ -1,6 +1,6 @@
 # StarDictNet
 
-Rudimentary class lib that reads StarDict dictionaries.
+Rudimentary class lib that can read and write StarDict dictionaries.
 Also, a Powershell module which acts as a very basic cli StarDict dictionary lookup program.
 
 # Using Powershell Module
