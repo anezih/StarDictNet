@@ -22,6 +22,8 @@ public class OutputEntry
         this.Headword = headWord.Trim();
         this.Definition = definition.Trim();
         this.Alternatives = alternatives;
+
+        this.Alternatives.Remove(this.Headword);
     }
 
     public byte[] HeadwordUTF8() => utf8NoBom.GetBytes(Headword);
