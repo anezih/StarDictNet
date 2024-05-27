@@ -392,9 +392,8 @@ namespace StarDictNet
         private static byte[] ToUint32BigEndian(int number)
         {
             byte[] buf = new byte[4];
-            Span<byte> dest = new(buf);
-            BinaryPrimitives.WriteUInt32BigEndian(dest, (uint)number);
-            return dest.ToArray();
+            BinaryPrimitives.WriteUInt32BigEndian(buf, (uint)number);
+            return buf;
         }
 
         private static void AddBinToZip(string fileName, MemoryStream inMs, ZipArchive zipArchive)
