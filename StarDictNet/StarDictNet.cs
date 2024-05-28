@@ -389,10 +389,30 @@ namespace StarDictNet
             return entries;
         }
 
+        private static List<Syn> PrepareSyns(List<OutputEntry> entries)
+        {
+            List<Syn> result = new();
+            var utf8NoBom = new UTF8Encoding(false);
+            foreach (var entry in entries)
+                if (entry.Alternatives != null && entry.Alternatives.Count > 0)
+                    foreach (var syn in entry.Alternatives)
+                        result.Add( new Syn(syn, (uint)entry.idx) );
+            if (result.Count > 1)
+                result.Sort((a,b) => { return StarDictComp(a.SynWord, b.SynWord, utf8NoBom);});
+            return result;
+        }
+
         private static byte[] ToUint32BigEndian(int number)
         {
             byte[] buf = new byte[4];
             BinaryPrimitives.WriteUInt32BigEndian(buf, (uint)number);
+            return buf;
+        }
+
+        private static byte[] ToUint32BigEndian(uint number)
+        {
+            byte[] buf = new byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(buf, number);
             return buf;
         }
 
@@ -429,8 +449,9 @@ namespace StarDictNet
             var utf8NoBom = new UTF8Encoding(false);
 
             var prepedEntries = PrepareOutput(entries);
+            var syns = PrepareSyns(prepedEntries);
+            bool hasSyns = syns.Count > 0;
             int idxSize = 0;
-            int totalSynsWritten = 0;
             foreach (var entry in prepedEntries)
             {
                 // idx
@@ -442,14 +463,13 @@ namespace StarDictNet
                 // dict
                 dictStream.Write(entry.DefinitionUTF8());
                 // syns
-                if (entry.Alternatives != null && entry.Alternatives.Count > 0)
+                if (hasSyns)
                 {
-                    foreach (var syn in entry.Alternatives)
+                    foreach (var syn in syns)
                     {
-                        synStream.Write(utf8NoBom.GetBytes(syn));
+                        synStream.Write(utf8NoBom.GetBytes(syn.SynWord));
                         synStream.WriteByte(0x00);
-                        synStream.Write(ToUint32BigEndian(entry.idx));
-                        totalSynsWritten += 1;
+                        synStream.Write(ToUint32BigEndian(syn.OriginalWordIndex));
                     }
                 }
             }
@@ -458,8 +478,8 @@ namespace StarDictNet
             ifoStream.Write(utf8NoBom.GetBytes("version=3.0.0\n"));
             ifoStream.Write(utf8NoBom.GetBytes($"bookname={title}\n"));
             ifoStream.Write(utf8NoBom.GetBytes($"wordcount={prepedEntries.Count}\n"));
-            if (totalSynsWritten > 0)
-                ifoStream.Write(utf8NoBom.GetBytes($"synwordcount={totalSynsWritten}\n"));
+            if (hasSyns)
+                ifoStream.Write(utf8NoBom.GetBytes($"synwordcount={syns.Count}\n"));
             ifoStream.Write(utf8NoBom.GetBytes($"idxfilesize={idxSize}\n"));
             ifoStream.Write(utf8NoBom.GetBytes($"author={author}\n"));
             ifoStream.Write(utf8NoBom.GetBytes($"description={description}\n"));
@@ -471,7 +491,7 @@ namespace StarDictNet
             {
                 AddBinToZip(idxName, idxStream, zipArchiveStream);
                 AddBinToZip(dictName, dictStream, zipArchiveStream);
-                if (totalSynsWritten > 0)
+                if (hasSyns)
                     AddBinToZip(synName, synStream, zipArchiveStream);
                 AddBinToZip(ifoName, ifoStream, zipArchiveStream);
             }
