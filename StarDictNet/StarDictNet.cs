@@ -462,15 +462,15 @@ namespace StarDictNet
                 idxSize += entry.HeadwordUTF8().Length + 1 + 4 + 4;
                 // dict
                 dictStream.Write(entry.DefinitionUTF8());
-                // syns
-                if (hasSyns)
+            }
+            // syns
+            if (hasSyns)
+            {
+                foreach (var syn in syns)
                 {
-                    foreach (var syn in syns)
-                    {
-                        synStream.Write(utf8NoBom.GetBytes(syn.SynWord));
-                        synStream.WriteByte(0x00);
-                        synStream.Write(ToUint32BigEndian(syn.OriginalWordIndex));
-                    }
+                    synStream.Write(utf8NoBom.GetBytes(syn.SynWord));
+                    synStream.WriteByte(0x00);
+                    synStream.Write(ToUint32BigEndian(syn.OriginalWordIndex));
                 }
             }
             // ifo
