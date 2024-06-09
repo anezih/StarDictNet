@@ -372,7 +372,7 @@ namespace StarDictNet
                 return string.Compare(s1, s2, StringComparison.Ordinal);
         }
 
-        private static List<OutputEntry> PrepareOutput(List<OutputEntry> entries)
+        private async static Task<List<OutputEntry>> PrepareOutput(List<OutputEntry> entries)
         {
             var utf8NoBom = new UTF8Encoding(false);
             entries.Sort((a,b) => { return StarDictComp(a.Headword, b.Headword, utf8NoBom);});
@@ -380,6 +380,8 @@ namespace StarDictNet
             int offset = 0;
             foreach (var entry in entries)
             {
+                if (idx % 1000 == 0)
+                    await Task.Delay(1);
                 entry.defOffset = offset;
                 entry.idx = idx;
 
@@ -389,14 +391,24 @@ namespace StarDictNet
             return entries;
         }
 
-        private static List<Syn> PrepareSyns(List<OutputEntry> entries)
+        private async static Task<List<Syn>> PrepareSyns(List<OutputEntry> entries)
         {
             List<Syn> result = new();
             var utf8NoBom = new UTF8Encoding(false);
+            int cnt = 0;
             foreach (var entry in entries)
+            {
+                if (cnt % 1000 == 0)
+                    await Task.Delay(1);
                 if (entry.Alternatives != null && entry.Alternatives.Count > 0)
+                {
                     foreach (var syn in entry.Alternatives)
+                    {
                         result.Add( new Syn(syn, (uint)entry.idx) );
+                        cnt++;
+                    }
+                }
+            }
             if (result.Count > 1)
                 result.Sort((a,b) => { return StarDictComp(a.SynWord, b.SynWord, utf8NoBom);});
             return result;
@@ -416,24 +428,24 @@ namespace StarDictNet
             return buf;
         }
 
-        private static void AddBinToZip(string fileName, MemoryStream inMs, ZipArchive zipArchive)
+        private async static Task AddBinToZip(string fileName, MemoryStream inMs, ZipArchive zipArchive)
         {
             var entry = zipArchive.CreateEntry(fileName);
             using (var zipEntryStream = entry.Open())
             {
                 inMs.Seek(0, SeekOrigin.Begin);
-                inMs.CopyTo(zipEntryStream);
+                await inMs.CopyToAsync(zipEntryStream);
             }
         }
 
-        private static void CloseDispose(MemoryStream ms)
+        private async static Task CloseDispose(MemoryStream ms)
         {
             ms.Close();
-            ms.Dispose();
+            await ms.DisposeAsync();
         }
 
         // https://github.com/huzheng001/stardict-3/blob/master/dict/doc/StarDictFileFormat
-        public static MemoryStream Write(List<OutputEntry> entries, string fileName = "Stardict_Dictionary",
+        public async static Task<MemoryStream> Write(List<OutputEntry> entries, string fileName = "Stardict_Dictionary",
         string title = "Title", string author = "Author", string description = "Desc.")
         {
             string ifoName = $"{fileName}.ifo";
@@ -448,58 +460,58 @@ namespace StarDictNet
 
             var utf8NoBom = new UTF8Encoding(false);
 
-            var prepedEntries = PrepareOutput(entries);
-            var syns = PrepareSyns(prepedEntries);
+            var prepedEntries = await PrepareOutput(entries);
+            var syns = await PrepareSyns(prepedEntries);
             bool hasSyns = syns.Count > 0;
             int idxSize = 0;
             foreach (var entry in prepedEntries)
             {
                 // idx
-                idxStream.Write(entry.HeadwordUTF8());
+                await idxStream.WriteAsync(entry.HeadwordUTF8());
                 idxStream.WriteByte(0x00);
-                idxStream.Write(ToUint32BigEndian(entry.defOffset));
-                idxStream.Write(ToUint32BigEndian(entry.DefinitionSize()));
+                await idxStream.WriteAsync(ToUint32BigEndian(entry.defOffset));
+                await idxStream.WriteAsync(ToUint32BigEndian(entry.DefinitionSize()));
                 idxSize += entry.HeadwordUTF8().Length + 1 + 4 + 4;
                 // dict
-                dictStream.Write(entry.DefinitionUTF8());
+                await dictStream.WriteAsync(entry.DefinitionUTF8());
             }
             // syns
             if (hasSyns)
             {
                 foreach (var syn in syns)
                 {
-                    synStream.Write(utf8NoBom.GetBytes(syn.SynWord));
+                    await synStream.WriteAsync(utf8NoBom.GetBytes(syn.SynWord));
                     synStream.WriteByte(0x00);
-                    synStream.Write(ToUint32BigEndian(syn.OriginalWordIndex));
+                    await synStream.WriteAsync(ToUint32BigEndian(syn.OriginalWordIndex));
                 }
             }
             // ifo
-            ifoStream.Write(utf8NoBom.GetBytes("StarDict's dict ifo file\n"));
-            ifoStream.Write(utf8NoBom.GetBytes("version=3.0.0\n"));
-            ifoStream.Write(utf8NoBom.GetBytes($"bookname={title}\n"));
-            ifoStream.Write(utf8NoBom.GetBytes($"wordcount={prepedEntries.Count}\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes("StarDict's dict ifo file\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes("version=3.0.0\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes($"bookname={title}\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes($"wordcount={prepedEntries.Count}\n"));
             if (hasSyns)
-                ifoStream.Write(utf8NoBom.GetBytes($"synwordcount={syns.Count}\n"));
-            ifoStream.Write(utf8NoBom.GetBytes($"idxfilesize={idxSize}\n"));
-            ifoStream.Write(utf8NoBom.GetBytes($"author={author}\n"));
-            ifoStream.Write(utf8NoBom.GetBytes($"description={description}\n"));
-            ifoStream.Write(utf8NoBom.GetBytes($"sametypesequence=h\n"));
+                await ifoStream.WriteAsync(utf8NoBom.GetBytes($"synwordcount={syns.Count}\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes($"idxfilesize={idxSize}\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes($"author={author}\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes($"description={description}\n"));
+            await ifoStream.WriteAsync(utf8NoBom.GetBytes($"sametypesequence=h\n"));
 
             // zipfile
             MemoryStream zipMs = new MemoryStream();
             using (var zipArchiveStream = new ZipArchive(zipMs, ZipArchiveMode.Create, true))
             {
-                AddBinToZip(idxName, idxStream, zipArchiveStream);
-                AddBinToZip(dictName, dictStream, zipArchiveStream);
+                await AddBinToZip(idxName, idxStream, zipArchiveStream);
+                await AddBinToZip(dictName, dictStream, zipArchiveStream);
                 if (hasSyns)
-                    AddBinToZip(synName, synStream, zipArchiveStream);
-                AddBinToZip(ifoName, ifoStream, zipArchiveStream);
+                    await AddBinToZip(synName, synStream, zipArchiveStream);
+                await AddBinToZip(ifoName, ifoStream, zipArchiveStream);
             }
 
-            CloseDispose(ifoStream);
-            CloseDispose(idxStream);
-            CloseDispose(dictStream);
-            CloseDispose(synStream);
+            await CloseDispose(ifoStream);
+            await CloseDispose(idxStream);
+            await CloseDispose(dictStream);
+            await CloseDispose(synStream);
 
             return zipMs;
         }
