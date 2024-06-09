@@ -513,6 +513,8 @@ namespace StarDictNet
             await CloseDispose(dictStream);
             await CloseDispose(synStream);
 
+            zipMs.Seek(0, SeekOrigin.Begin);
+
             return zipMs;
         }
     }
