@@ -11,6 +11,9 @@ public class OutputEntry
     public HashSet<string>? Alternatives { get; set; }
     public string Definition { get; set; }
 
+    private byte[] headwordUTF8;
+    private byte[] definitionUTF8;
+
     public OutputEntry(string headWord, string definition)
     {
         this.Headword = headWord.Trim();
@@ -26,9 +29,9 @@ public class OutputEntry
         this.Alternatives.Remove(this.Headword);
     }
 
-    public byte[] HeadwordUTF8() => utf8NoBom.GetBytes(Headword);
+    public byte[] HeadwordUTF8() => headwordUTF8 ??= utf8NoBom.GetBytes(Headword);
 
-    public byte[] DefinitionUTF8() => utf8NoBom.GetBytes(Definition);
+    public byte[] DefinitionUTF8() => definitionUTF8 ??= utf8NoBom.GetBytes(Definition);
 
     public int DefinitionSize() => DefinitionUTF8().Length;
 }
