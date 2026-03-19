@@ -47,7 +47,7 @@ public class Ifo
             lines = new();
             var stream = new StreamReader(ifo, Encoding.UTF8);
             string line;
-            while ((line = stream.ReadLine()) != null)
+            while ((line = stream.ReadLine()!) != null)
             {
                 lines.Add(line);
             }

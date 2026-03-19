@@ -110,8 +110,17 @@ public class StarDictWriter
     public async ValueTask WriteAsync(List<OutputEntry> entries, string folder, string fileName = "Stardict Dictionary",
     string title = "Title", string author = "Author", string description = "Desc.")
     {
-        if (!Directory.Exists(folder))
-            Directory.CreateDirectory(folder);
+        try
+        {
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Could not created the specified directory while writing StarDict dictionary, exception: {ex}");
+            return;
+        }
+        
         using var ifoFs = File.Create(Path.Combine(folder, $"{fileName}.ifo"));
         using var idxFs = File.Create(Path.Combine(folder, $"{fileName}.idx"));
         using var dictFs = File.Create(Path.Combine(folder, $"{fileName}.dict"));

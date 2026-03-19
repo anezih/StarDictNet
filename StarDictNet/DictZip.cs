@@ -39,7 +39,6 @@ public class DictZip
     private Stream DictZipStream;
     public DZHeader header = new();
 
-    private byte FTEXT = 0x01;
     private byte FHCRC = 0x02;
     private byte FEXTRA = 0x04;
     private byte FNAME = 0x08;
@@ -70,7 +69,7 @@ public class DictZip
     {
         byte[] res = new byte[chunkSize];
         stream.Seek(offset, SeekOrigin.Begin);
-        stream.Read(res, 0, chunkSize);
+        stream.ReadExactly(res, 0, chunkSize);
         return res;
     }
 
@@ -173,7 +172,7 @@ public class DictZip
         else
         {
             var data = sf.DATA;
-            VER     = data[0] + 256 * data[1];
+            VER     = data![0] + 256 * data[1];
             CHLEN   = data[2] + 256 * data[3];
             CHCOUNT = data[4] + 256 * data[5];
 

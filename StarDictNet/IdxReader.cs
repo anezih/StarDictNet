@@ -5,7 +5,6 @@ namespace StarDictNet.Core;
 
 public class IdxReader
 {
-    private bool is64bit;
     private byte[]? idxArray;
 
     public List<Idx> IdxData = new();

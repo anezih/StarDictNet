@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace StarDictNet.Core;
 
@@ -12,12 +13,14 @@ public class OutputEntry
     public required string Definition { get; set; }
     public HashSet<string>? Alternatives { get; set; }
 
+    [SetsRequiredMembers]
     public OutputEntry(string headWord, string definition)
     {
         this.Headword = headWord.Trim();
         this.Definition = definition.Trim();
     }
 
+    [SetsRequiredMembers]
     public OutputEntry(string headWord, string definition, HashSet<string> alternatives)
     {
         this.Headword = headWord.Trim();

@@ -106,14 +106,14 @@ public class StarDictReader
     {
         if(IsDictzip)
         {
-            return DictZip.ReadAt(offset, size);
+            return DictZip!.ReadAt(offset, size);
         }
 
         else
         {
-            DictStream.Seek(offset, SeekOrigin.Begin);
+            DictStream!.Seek(offset, SeekOrigin.Begin);
             byte[] defBuf = new byte[size];
-            DictStream.Read(defBuf, 0, size);
+            DictStream!.ReadExactly(defBuf, 0, size);
             var def = Encoding.UTF8.GetString(defBuf);
             return def;
         }
@@ -152,7 +152,7 @@ public class StarDictReader
         {
             int maxSynTry = 0;
             bool isFirstSynFound = false;
-            foreach (var s in Syn)
+            foreach (var s in Syn!)
             {
                 if (maxSynTry == 20) break;
                 if (String.Compare(s.SynWord, word, CultureInfo.CurrentCulture, compOptions) == 0)
@@ -218,7 +218,7 @@ public class StarDictReader
         if (matchSyns && HasSyn)
         {
             List<int> synIndexes = new();
-            foreach (var s in Syn)
+            foreach (var s in Syn!)
             {
                 if (Idxs.Count == MAX_REGEX_RESULTS)
                 {
@@ -261,7 +261,7 @@ public class StarDictReader
             int index = Idx.FindIndex(i => i.Word == word);
             if (index >= 0)
             {
-                SynIndexWordGroup?.TryGetValue(index, out syns);
+                SynIndexWordGroup?.TryGetValue(index, out syns!);
             }
         }
         return syns;
@@ -274,7 +274,7 @@ public class StarDictReader
             HashSet<string> syns = new();
             if (HasSyn)
             {
-                SynIndexWordGroup.TryGetValue(i, out syns);
+                SynIndexWordGroup!.TryGetValue(i, out syns!);
             }
             entry.Word = Idx[i].Word;
             entry.Alternatives = syns;
