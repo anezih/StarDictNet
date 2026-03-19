@@ -1,16 +1,8 @@
-namespace StarDictNet
-{
-    public class Idx
-    {
-        public string Word { get; }
-        public ulong WordDataOffset { get; }
-        public uint WordDataSize { get; }
+namespace StarDictNet.Core;
 
-        public Idx(string word, ulong wdo, uint wds)
-        {
-            Word = word;
-            WordDataOffset = wdo;
-            WordDataSize = wds;
-        }
-    }
+public class Idx(string word, ulong wordDataOffset, uint wordDataSize)
+{
+    public string Word { get; } = word;
+    public ulong WordDataOffset { get; } = wordDataOffset;
+    public uint WordDataSize { get; } = wordDataSize;
 }

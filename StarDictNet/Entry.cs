@@ -1,9 +1,8 @@
-namespace StarDictNet
+namespace StarDictNet.Core;
+
+public class Entry
 {
-    public class Entry
-    {
-        public string Word { get; set; }
-        public HashSet<string> Alternatives { get; set; }
-        public string Definition { get; set; }
-    }
+    public string? Word { get; set; }
+    public HashSet<string>? Alternatives { get; set; }
+    public string? Definition { get; set; }
 }

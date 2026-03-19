@@ -1,18 +1,16 @@
 ﻿using System.Text;
 
-namespace StarDictNet;
+namespace StarDictNet.Core;
 
 public class OutputEntry
 {
-    readonly Encoding utf8NoBom = new UTF8Encoding(false);
-    internal int idx = 0;
-    internal int defOffset = 0;
-    public string Headword { get; set; }
+    private static readonly Encoding utf8NoBom = new UTF8Encoding(false);
+    internal int Idx = 0;
+    internal int DefinitionOffset = 0;
+    
+    public required string Headword { get; set; }
+    public required string Definition { get; set; }
     public HashSet<string>? Alternatives { get; set; }
-    public string Definition { get; set; }
-
-    private byte[] headwordUTF8;
-    private byte[] definitionUTF8;
 
     public OutputEntry(string headWord, string definition)
     {
@@ -29,9 +27,9 @@ public class OutputEntry
         this.Alternatives.Remove(this.Headword);
     }
 
-    public byte[] HeadwordUTF8() => headwordUTF8 ??= utf8NoBom.GetBytes(Headword);
+    public byte[] HeadwordUTF8 => utf8NoBom.GetBytes(Headword);
 
-    public byte[] DefinitionUTF8() => definitionUTF8 ??= utf8NoBom.GetBytes(Definition);
+    public byte[] DefinitionUTF8 => utf8NoBom.GetBytes(Definition);
 
-    public int DefinitionSize() => DefinitionUTF8().Length;
+    public int DefinitionSize => utf8NoBom.GetByteCount(Definition);
 }

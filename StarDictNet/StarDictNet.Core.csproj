@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>StarDictNet</PackageId>
+    <Version>1.1.0</Version>
+    <Authors>https://github.com/anezih</Authors>
+    <Description>Rudimentary class lib that can read and write StarDict dictionaries.</Description>
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugSymbols>False</DebugSymbols>
+    <DebugType>None</DebugType>
+  </PropertyGroup>
+</Project>
