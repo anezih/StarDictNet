@@ -161,8 +161,10 @@ public class StarDictWriter
         if (hasSyns)
             await ifoFs.WriteAsync(utf8NoBom.GetBytes($"synwordcount={syns.Count}\n"));
         await ifoFs.WriteAsync(utf8NoBom.GetBytes($"idxfilesize={idxSize}\n"));
-        await ifoFs.WriteAsync(utf8NoBom.GetBytes($"author={author}\n"));
-        await ifoFs.WriteAsync(utf8NoBom.GetBytes($"description={description}\n"));
+        if (!string.IsNullOrWhiteSpace(author))
+            await ifoFs.WriteAsync(utf8NoBom.GetBytes($"author={author}\n"));
+        if (!string.IsNullOrWhiteSpace(description))
+            await ifoFs.WriteAsync(utf8NoBom.GetBytes($"description={description}\n"));
         await ifoFs.WriteAsync(utf8NoBom.GetBytes($"sametypesequence=h\n"));
     }
 }
